@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Dash | HUD Futurista</title>
+    <title>Driver MJSK</title>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
@@ -15,6 +15,8 @@
             --dark-bg: #0a0b10;
             --glass: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --uber-color: #000000;
+            --99-color: #f7b500;
         }
 
         body {
@@ -99,7 +101,7 @@
         .gps-active {
             border: 1px solid var(--neon-green) !important;
             color: var(--neon-green) !important;
-            box-shadow: 0 0-10px var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
         }
 
         input, select {
@@ -127,6 +129,7 @@
 
         .btn-main { background: var(--neon-blue); color: #000; }
         .btn-gps { background: transparent; border: 1px solid var(--neon-purple); color: var(--neon-purple); }
+        .btn-whatsapp { background: #25d366; color: white; }
 
         .history-table {
             width: 100%;
@@ -135,6 +138,9 @@
         }
         .history-table th { text-align: left; color: var(--neon-blue); padding: 10px; }
         .history-table td { padding: 10px; border-bottom: 1px solid var(--glass-border); }
+
+        .badge-uber { background: white; color: black; padding: 2px 6px; border-radius: 4px; font-weight: 900; }
+        .badge-99 { background: var(--99-color); color: black; padding: 2px 6px; border-radius: 4px; font-weight: 900; }
 
         .btn-excluir {
             background: none;
@@ -153,12 +159,12 @@
 <body>
 
     <div class="header">
-        <h2>PILOT HUD</h2>
+        <h2>Driver MJSK <span style="font-size: 10px;"> 2.3.0</span></h2>
         <div id="status-background" style="font-size: 10px; margin-top: 5px; color: #666;">MODO SEGUNDO PLANO: INATIVO</div>
     </div>
 
     <div class="card meta-container">
-        <label class="stat-label">Meta de Faturamento</label>
+        <label class="stat-label">Meta de Faturamento<br><span style="texte-align: center;">Digite o valor</span></label>
         <input type="number" id="input-meta" oninput="atualizarDashboard()">
         <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="barra-meta"></div>
@@ -189,8 +195,8 @@
 
     <div class="card" style="margin-top: 20px;">
         <select id="tipo" onchange="toggleCampos()">
-            <option value="corrida">Nova Corrida</option>
-            <option value="despesa">Nova Despesa</option>
+            <option value="corrida">Nova Corrida / Entrada</option>
+            <option value="despesa">Saída / Gasto</option>
         </select>
 
         <div id="campos-corrida">
@@ -204,11 +210,18 @@
         </div>
 
         <div id="campos-despesa" style="display:none">
-            <input type="number" id="valor-gasto" placeholder="Valor Gasto (R$)">
-            <input type="text" id="desc-gasto" placeholder="Ex: Gasolina, Almoço">
+            <select id="tipo-saida" onchange="checkCustomSaida()">
+                <option value="Gasolina">Saída: Gasolina</option>
+                <option value="Óleo">Saída: Óleo</option>
+                <option value="Merenda">Saída: Merenda</option>
+                <option value="Outros">Outros (Escrever)</option>
+            </select>
+            <input type="text" id="desc-gasto-custom" placeholder="O que você comprou?" style="display:none">
+            <input type="number" id="valor-gasto" placeholder="Valor Gasto (R$)" step="0.01">
         </div>
 
         <button class="btn btn-main" onclick="salvarRegistro()">Computar Dados</button>
+        <button class="btn btn-whatsapp" onclick="enviarRelatorioWhatsApp()">ENVIAR RESUMO WHATSAPP 📱</button>
     </div>
 
     <div class="card">
@@ -226,7 +239,8 @@
         </table>
     </div>
 
-    <button class="btn" style="background:transparent; color:#444; font-size:10px" onclick="limparTudo()">Resetar Banco de Dados</button>
+    <button class="btn" style="background: red; color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
+    " onclick="limparTudo()">Resetar Banco de Dados</button>
 
     <script>
         let registros = JSON.parse(localStorage.getItem('fut_data')) || [];
@@ -238,8 +252,12 @@
         let lastCoords = null;
         let wakeLock = null;
 
-        // Contexto de áudio para o BIP
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function checkCustomSaida() {
+            const val = document.getElementById('tipo-saida').value;
+            document.getElementById('desc-gasto-custom').style.display = val === 'Outros' ? 'block' : 'none';
+        }
 
         function tocarBip() {
             const oscillator = audioCtx.createOscillator();
@@ -253,7 +271,6 @@
             oscillator.stop(audioCtx.currentTime + 0.1);
         }
 
-        // FUNÇÃO PARA IMPEDIR A TELA DE APAGAR (WAKE LOCK)
         async function requestWakeLock() {
             try {
                 if ('wakeLock' in navigator) {
@@ -261,9 +278,7 @@
                     document.getElementById('status-background').innerText = "MODO SEGUNDO PLANO: ATIVO (TELA SEMPRE ACESA)";
                     document.getElementById('status-background').style.color = "var(--neon-green)";
                 }
-            } catch (err) {
-                console.log(`${err.name}, ${err.message}`);
-            }
+            } catch (err) { console.log(err); }
         }
 
         document.getElementById('input-meta').value = metaDiaria;
@@ -279,9 +294,7 @@
             if (watchID === null) {
                 if ("geolocation" in navigator) {
                     if (audioCtx.state === 'suspended') audioCtx.resume();
-                    
-                    requestWakeLock(); // Ativa o modo de tela sempre acesa
-                    
+                    requestWakeLock();
                     btn.innerText = "RASTREIO ATIVO";
                     btn.classList.add('gps-active');
                     watchID = navigator.geolocation.watchPosition(pos => {
@@ -306,10 +319,7 @@
             } else {
                 navigator.geolocation.clearWatch(watchID);
                 watchID = null;
-                if (wakeLock !== null) {
-                    wakeLock.release();
-                    wakeLock = null;
-                }
+                if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
                 document.getElementById('status-background').innerText = "MODO SEGUNDO PLANO: INATIVO";
                 document.getElementById('status-background').style.color = "#666";
                 btn.innerText = "ATIVAR RASTREIO";
@@ -341,11 +351,13 @@
                     plat: document.getElementById('plataforma').value
                 };
             } else {
+                const tipoSaida = document.getElementById('tipo-saida').value;
+                const customDesc = document.getElementById('desc-gasto-custom').value;
                 entry = {
                     id: Date.now(),
                     tipo: 'despesa',
                     valor: parseFloat(document.getElementById('valor-gasto').value) || 0,
-                    desc: document.getElementById('desc-gasto').value || 'Gasto'
+                    desc: tipoSaida === 'Outros' ? customDesc : tipoSaida
                 };
             }
 
@@ -356,7 +368,7 @@
                 document.getElementById('valor').value = '';
                 document.getElementById('km-corrida').value = '';
                 document.getElementById('valor-gasto').value = '';
-                document.getElementById('desc-gasto').value = '';
+                document.getElementById('desc-gasto-custom').value = '';
             }
         }
 
@@ -380,7 +392,8 @@
                 if(r.tipo === 'corrida') {
                     bruto += r.valor;
                     kmSoma += r.km;
-                    lista.innerHTML += `<tr><td>${r.plat}</td><td class="neon-text-green">R$ ${r.valor.toFixed(2)}</td><td>${r.km}km</td><td><button class="btn-excluir" onclick="excluirRegistro(${r.id})">🗑️</button></td></tr>`;
+                    let badgeClass = r.plat === 'Uber' ? 'badge-uber' : (r.plat === '99 App' || r.plat === '99' ? 'badge-99' : '');
+                    lista.innerHTML += `<tr><td><span class="${badgeClass}">${r.plat}</span></td><td class="neon-text-green">R$ ${r.valor.toFixed(2)}</td><td>${r.km}km</td><td><button class="btn-excluir" onclick="excluirRegistro(${r.id})">🗑️</button></td></tr>`;
                 } else {
                     gastos += r.valor;
                     lista.innerHTML += `<tr><td>GASTO</td><td class="neon-text-purple">R$ ${r.valor.toFixed(2)}</td><td>${r.desc}</td><td><button class="btn-excluir" onclick="excluirRegistro(${r.id})">🗑️</button></td></tr>`;
@@ -395,6 +408,27 @@
             let perc = metaDiaria > 0 ? (bruto / metaDiaria) * 100 : 0;
             document.getElementById('barra-meta').style.width = Math.min(perc, 100) + "%";
             document.getElementById('txt-progresso').innerText = `STATUS: ${perc.toFixed(1)}% DA META`;
+        }
+
+        function enviarRelatorioWhatsApp() {
+            const bruto = document.getElementById('total-bruto').innerText;
+            const liquido = document.getElementById('total-liquido').innerText;
+            const gastosVal = (parseFloat(bruto.replace('R$ ', '')) - parseFloat(liquido.replace('R$ ', ''))).toFixed(2);
+            const kmManual = document.getElementById('km-acumulado').innerText;
+            const kmRealGPS = document.getElementById('gps-km').innerText;
+            
+            let msg = `*📊 RELATÓRIO DO PILOTO*%0A`;
+            msg += `━━━━━━━━━━━━━━%0A`;
+            msg += `💰 *BRUTO:* ${bruto}%0A`;
+            msg += `📉 *GASTOS:* R$ ${gastosVal}%0A`;
+            msg += `✅ *LÍQUIDO REAL:* ${liquido}%0A`;
+            msg += `━━━━━━━━━━━━━━%0A`;
+            msg += `🛣️ *KM DAS CORRIDAS:* ${kmManual}%0A`;
+            msg += `📡 *KM RODADA (GPS):* ${kmRealGPS}%0A`;
+            msg += `━━━━━━━━━━━━━━`;
+            
+            const fone = "5562995679219";
+            window.open(`https://api.whatsapp.com/send?phone=${fone}&text=${msg}`);
         }
 
         function limparTudo() {
