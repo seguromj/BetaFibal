@@ -164,7 +164,7 @@
     </div>
 
     <div class="card meta-container">
-        <label class="stat-label">Meta de Faturamento<br><span style="texte-align: center;">Digite o valor</span></label>
+        <label class="stat-label">Meta de Faturamento<br><span>Digite o valor</span></label>
         <input type="number" id="input-meta" oninput="atualizarDashboard()">
         <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="barra-meta"></div>
@@ -239,10 +239,19 @@
         </table>
     </div>
 
-    <button class="btn" style="background: red; color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
-    " onclick="limparTudo()">Resetar Banco de Dados</button>
+    <button class="btn" style="background: red; color: white;" onclick="limparTudo()">Resetar Banco de Dados</button>
 
     <script>
+        // ==========================================
+        // CONFIGURAÇÃO DOS IDs DO GOOGLE FORMS
+        // ==========================================
+        const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdMtWvq6CxHOpt7zY3kS3_oJdp0sKfeKuvedwclLv5LhuQGzg/formRespons";
+        const ID_APP   = "entry.699127532"; // ID do campo App/Plataforma
+        const ID_VALOR = "entry.1363440624"; // ID do campo Valor
+        const ID_KM    = "entry.1836329459"; // ID do campo KM / Descrição
+        const ID_TIPO  = "entry.3333333"; // ID do campo Tipo (Corrida/Gasto)
+        // ==========================================
+
         let registros = JSON.parse(localStorage.getItem('fut_data')) || [];
         let metaDiaria = localStorage.getItem('fut_meta') || 300;
         let kmGPS = parseFloat(localStorage.getItem('fut_km_gps')) || 0;
@@ -251,7 +260,6 @@
         let watchID = null;
         let lastCoords = null;
         let wakeLock = null;
-
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function checkCustomSaida() {
@@ -299,18 +307,12 @@
                     btn.classList.add('gps-active');
                     watchID = navigator.geolocation.watchPosition(pos => {
                         if (lastCoords) {
-                            let d = calcularDistancia(
-                                lastCoords.latitude, lastCoords.longitude,
-                                pos.coords.latitude, pos.coords.longitude
-                            );
+                            let d = calcularDistancia(lastCoords.latitude, lastCoords.longitude, pos.coords.latitude, pos.coords.longitude);
                             if (d > 0.005) { 
                                 kmGPS += d;
                                 localStorage.setItem('fut_km_gps', kmGPS);
                                 document.getElementById('gps-km').innerText = kmGPS.toFixed(2) + " KM";
-                                if (kmGPS >= proximoBip) {
-                                    tocarBip();
-                                    proximoBip = Math.floor(kmGPS) + 1;
-                                }
+                                if (kmGPS >= proximoBip) { tocarBip(); proximoBip = Math.floor(kmGPS) + 1; }
                             }
                         }
                         lastCoords = pos.coords;
@@ -332,10 +334,21 @@
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function enviarParaPlanilhaGoogle(entry) {
+            if (FORM_URL.includes("SUA_URL")) return;
+            
+            let info = entry.tipo === 'corrida' ? entry.km : entry.desc;
+            let plat = entry.plat || "Saída";
+            
+            const fullUrl = `${FORM_URL}?${ID_TIPO}=${encodeURIComponent(entry.tipo)}&${ID_APP}=${encodeURIComponent(plat)}&${ID_VALOR}=${entry.valor}&${ID_KM}=${encodeURIComponent(info)}`;
+            
+            fetch(fullUrl, { mode: 'no-cors' })
+                .then(() => console.log("Sincronizado!"))
+                .catch(e => console.error("Erro:", e));
         }
 
         function salvarRegistro() {
@@ -364,6 +377,7 @@
             if(entry.valor > 0) {
                 registros.push(entry);
                 localStorage.setItem('fut_data', JSON.stringify(registros));
+                enviarParaPlanilhaGoogle(entry);
                 atualizarDashboard();
                 document.getElementById('valor').value = '';
                 document.getElementById('km-corrida').value = '';
@@ -373,7 +387,7 @@
         }
 
         function excluirRegistro(id) {
-            if(confirm("Excluir este item?")) {
+            if(confirm("Excluir item?")) {
                 registros = registros.filter(r => r.id !== id);
                 localStorage.setItem('fut_data', JSON.stringify(registros));
                 atualizarDashboard();
@@ -383,7 +397,6 @@
         function atualizarDashboard() {
             metaDiaria = parseFloat(document.getElementById('input-meta').value) || 0;
             localStorage.setItem('fut_meta', metaDiaria);
-
             let bruto = 0, gastos = 0, kmSoma = 0;
             const lista = document.getElementById('lista-historico');
             lista.innerHTML = '';
@@ -404,7 +417,6 @@
             document.getElementById('total-liquido').innerText = "R$ " + (bruto - gastos).toFixed(2);
             document.getElementById('km-acumulado').innerText = kmSoma.toFixed(1) + " KM";
             document.getElementById('gps-km').innerText = kmGPS.toFixed(2) + " KM";
-
             let perc = metaDiaria > 0 ? (bruto / metaDiaria) * 100 : 0;
             document.getElementById('barra-meta').style.width = Math.min(perc, 100) + "%";
             document.getElementById('txt-progresso').innerText = `STATUS: ${perc.toFixed(1)}% DA META`;
@@ -416,28 +428,11 @@
             const gastosVal = (parseFloat(bruto.replace('R$ ', '')) - parseFloat(liquido.replace('R$ ', ''))).toFixed(2);
             const kmManual = document.getElementById('km-acumulado').innerText;
             const kmRealGPS = document.getElementById('gps-km').innerText;
-            
-            let msg = `*📊 RELATÓRIO DO PILOTO*%0A`;
-            msg += `━━━━━━━━━━━━━━%0A`;
-            msg += `💰 *BRUTO:* ${bruto}%0A`;
-            msg += `📉 *GASTOS:* R$ ${gastosVal}%0A`;
-            msg += `✅ *LÍQUIDO REAL:* ${liquido}%0A`;
-            msg += `━━━━━━━━━━━━━━%0A`;
-            msg += `🛣️ *KM DAS CORRIDAS:* ${kmManual}%0A`;
-            msg += `📡 *KM RODADA (GPS):* ${kmRealGPS}%0A`;
-            msg += `━━━━━━━━━━━━━━`;
-            
-            const fone = "5562995679219";
-            window.open(`https://api.whatsapp.com/send?phone=${fone}&text=${msg}`);
+            let msg = `*📊 RELATÓRIO DO PILOTO*%0A💰 *BRUTO:* ${bruto}%0A📉 *GASTOS:* R$ ${gastosVal}%0A✅ *LÍQUIDO:* ${liquido}%0A🛣️ *KM (GPS):* ${kmRealGPS}`;
+            window.open(`https://api.whatsapp.com/send?phone=5562995679219&text=${msg}`);
         }
 
-        function limparTudo() {
-            if(confirm("Reiniciar todo o sistema?")) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-
+        function limparTudo() { if(confirm("Reiniciar tudo?")) { localStorage.clear(); location.reload(); } }
         atualizarDashboard();
     </script>
 </body>
