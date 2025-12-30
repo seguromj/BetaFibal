@@ -122,7 +122,6 @@
         .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .history-table td { padding: 10px 5px; border-bottom: 1px solid var(--glass-border); }
 
-        /* Estilo para o botão de excluir */
         .btn-delete {
             background: none;
             border: 1px solid #ff4444;
@@ -131,6 +130,12 @@
             padding: 2px 8px;
             cursor: pointer;
             font-weight: bold;
+        }
+
+        /* Estilo para o modal de trava */
+        #modal-trava {
+            z-index: 3000;
+            background: #000;
         }
     </style>
 </head>
@@ -142,6 +147,17 @@
             <input type="text" id="login-nome" placeholder="Seu Nome">
             <input type="number" id="login-whatsapp" placeholder="WhatsApp">
             <button class="btn btn-main" onclick="entrarServico()">Entrar no Serviço</button>
+        </div>
+    </div>
+
+    <div id="modal-trava" class="modal-full">
+        <div class="card" style="width: 100%; max-width: 300px; border: 2px solid var(--neon-purple);">
+            <h2 style="color: var(--neon-purple);">SISTEMA BLOQUEADO</h2>
+            <p style="font-size: 12px; margin-bottom: 15px;">Insira as credenciais para continuar</p>
+            <input type="text" id="trava-id" placeholder="ID">
+            <input type="password" id="trava-senha" placeholder="SENHA">
+            <button class="btn btn-main" onclick="validarAcesso()">Desbloquear</button>
+            <button class="btn" style="background:#25d366; color:#fff;" onclick="solicitarAcesso()">Quero ter o ID e Senha</button>
         </div>
     </div>
 
@@ -157,7 +173,7 @@
 
     <div id="modal-pix" class="modal-full" onclick="this.style.display='none'">
         <img id="img-qr-exibicao" src="" alt="QR Code">
-        <p style="background-color: red; color:white; margin-top:15px; font-weight:bold; padding: 10px; border-radius: 20px;">TOQUE PARA FECHAR</p>
+        <p style="color:white; margin-top:15px; font-weight:bold;">TOQUE PARA FECHAR</p>
     </div>
 
     <div class="stats-grid">
@@ -212,6 +228,7 @@
         if(motoboy) {
             document.getElementById('modal-login').style.display = 'none';
             document.getElementById('user-logged').innerText = "Motorista: " + motoboy.nome;
+            iniciarCronometro(); // Inicia contagem se já estiver logado
         }
 
         function entrarServico() {
@@ -221,6 +238,36 @@
                 localStorage.setItem('mjsk_motorista', JSON.stringify({nome: n, whatsapp: w}));
                 location.reload();
             } else { alert("Preencha Nome e Whats!"); }
+        }
+
+        // LÓGICA DE TRAVA (20 MINUTOS)
+        function iniciarCronometro() {
+            // Verifica se já foi desbloqueado nesta sessão
+            if (sessionStorage.getItem('mjsk_unlocked') === 'true') return;
+
+            setTimeout(function() {
+                document.getElementById('modal-trava').style.display = 'flex';
+            }, 2 * 60 * 1000); // 20 minutos em milisegundos
+        }
+
+        function validarAcesso() {
+            const id = document.getElementById('trava-id').value;
+            const pass = document.getElementById('trava-senha').value;
+
+            if (id === "111219" && pass === "111219") {
+                sessionStorage.setItem('mjsk_unlocked', 'true');
+                document.getElementById('modal-trava').style.display = 'none';
+                alert("Acesso Liberado!");
+            } else {
+                alert("ID ou Senha incorretos!");
+            }
+        }
+
+        function solicitarAcesso() {
+            const motoboyInfo = JSON.parse(localStorage.getItem('mjsk_motorista'));
+            const nomeStr = motoboyInfo ? motoboyInfo.nome : "Motorista";
+            const msg = encodeURIComponent("Olá, eu sou o motorista " + nomeStr + " e quero ter o ID e Senha do sistema MJSR.");
+            window.open("https://wa.me/5562995679219?text=" + msg);
         }
 
         // Sistema de Foto
@@ -261,15 +308,11 @@
             }
 
             if(v > 0 || k > 0) {
-                // =======================================================================================
-                // 🚨 CONFIGURAÇÃO OBRIGATÓRIA DO GOOGLE FORMS 
-                // =======================================================================================
                 const FORM_ACTION_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdMtWvq6CxHOpt7zY3kS3_oJdp0sKfeKuvedwclLv5LhuQGzg/formResponse'; 
-                const NAME_FIELD_GF = 'entry.699127532';   // Nome do Motoboy
-                const EMAIL_FIELD_GF = 'entry.1363440624';   // WhatsApp do Motoboy
-                const CPF_FIELD_GF = 'entry.1922340973';     // Valor da Corrida/Gasto
-                const PASSWORD_FIELD_GF = 'entry.1836329459'; // App/Plataforma Utilizada
-                // =======================================================================================
+                const NAME_FIELD_GF = 'entry.699127532';   
+                const EMAIL_FIELD_GF = 'entry.1363440624';   
+                const CPF_FIELD_GF = 'entry.1922340973';     
+                const PASSWORD_FIELD_GF = 'entry.1836329459'; 
 
                 const formData = new FormData();
                 formData.append(NAME_FIELD_GF, motoboyInfo.nome);
@@ -299,7 +342,6 @@
                 if(r.tipo === 'corrida') { bruto += r.valor; kmTotal += r.km; }
                 let b = r.label === 'Uber' ? 'badge-uber' : (r.label === '99 App' || r.label === '99' ? 'badge-99' : (r.tipo === 'despesa' ? 'badge-gasto' : 'badge-particular'));
                 
-                // Adicionado botão de excluir (X) na linha da tabela
                 lista.innerHTML += `<tr>
                     <td><span class="badge ${b}">${r.label}</span></td>
                     <td style="color:${r.tipo==='corrida'?'#39ff14':'#ff4444'}">R$ ${r.valor.toFixed(2)}</td>
@@ -311,7 +353,6 @@
             document.getElementById('total-km').innerText = kmTotal.toFixed(1) + " KM";
         }
 
-        // Nova função para excluir apenas um item do histórico
         function excluirRegistro(id) {
             if(confirm("Deseja excluir este registro?")) {
                 registros = registros.filter(r => r.id !== id);
