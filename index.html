@@ -243,6 +243,9 @@
     <button class="btn" style="background:#300; color:#f44; border:1px solid #f44;" onclick="resetar()">Apagar Dados de Hoje</button>
 
     <script>
+        // FORÇAR RESET DE SESSÃO PARA TESTE
+        sessionStorage.removeItem('mjsk_unlocked');
+
         let registros = JSON.parse(localStorage.getItem('mjsk_data_v5')) || [];
         
         const motoboy = JSON.parse(localStorage.getItem('mjsk_motorista'));
@@ -263,16 +266,19 @@
         }
 
         function iniciarCronometro() {
-            // Removi a trava de sessionStorage para que ele SEMPRE peça a senha após o tempo definido durante seus testes.
+            // TEMPO DE 30 SEGUNDOS PARA TESTE RÁPIDO
             setTimeout(function() {
-                document.getElementById('modal-trava').style.display = 'flex';
-            }, 2 * 60 * 1000); // 2 minutos para testar
+                if (sessionStorage.getItem('mjsk_unlocked') !== 'true') {
+                    document.getElementById('modal-trava').style.display = 'flex';
+                }
+            }, 30000); 
         }
 
         function validarAcesso() {
             const id = document.getElementById('trava-id').value;
             const pass = document.getElementById('trava-senha').value;
-            if (id === "1112199" && pass === "1112199") {
+            // SENHA ATUALIZADA
+            if (id === "11121999" && pass === "11121999") {
                 sessionStorage.setItem('mjsk_unlocked', 'true');
                 
                 if (!localStorage.getItem('mjsk_expiracao')) {
