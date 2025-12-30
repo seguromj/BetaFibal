@@ -1,7 +1,7 @@
 {
-  "name": "MJSR PRO 5.0.3",
-  "short_name": "MJSR",
-  "description": "Drinks exclusivos preparados pelo Barman Darwin",
+  "name": "MJSR Pro",
+  "short_name": "MJSR Pro",
+  "description": "MJSR Pro 5.0.3 exclusivo",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
