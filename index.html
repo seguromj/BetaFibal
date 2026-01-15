@@ -317,7 +317,7 @@
 
     <div id="modal-login" class="modal-full" style="display: flex;">
         <div class="card" style="width: 100%; max-width: 300px;">
-            <h2 style="color: var(--neon-blue);">ACESSO MJSK</h2>
+            <h2 style="color: var(--neon-blue);">ACESSO ALBATROZ</h2>
             <input type="text" id="login-nome" placeholder="Seu Nome">
             <input type="number" id="login-whatsapp" placeholder="WhatsApp">
             <button class="btn btn-main" onclick="entrarServico()">Entrar no Serviço</button>
@@ -346,7 +346,7 @@
     </div>
 
     <div class="header">
-        <h2 style="margin:0; color:var(--neon-blue); letter-spacing:2px;">MJSR PRO <span style="font-size: 10px;"> 5.0.3</span></h2>
+        <h2 style="margin:0; color:var(--neon-blue); letter-spacing:2px;">ALBATROZ PRO <span style="font-size: 10px;"> 5.0.3</span></h2>
         <span id="user-logged" style="font-size: 10px; color: var(--neon-green);"></span>
         <div id="display-validade" style="font-size: 10px; color: #ff4444; margin-top: 5px; font-weight: bold;"></div>
         <button onclick="toggleAmoled()" style="background:none; border:1px solid #444; color:#888; font-size:9px; padding:3px 8px; border-radius:10px; margin-top:10px;">Modo AMOLED (Bateria)</button>
@@ -445,11 +445,12 @@
         <span class="section-title" style="color: #f7b500;">Manutenção e Cálculos</span>
         
         <div style="margin-bottom: 15px;">
-            <span class="stat-label">Aviso de Troca de Óleo (KM)</span>
-            <div style="display: flex; gap: 10px;">
+            <span class="stat-label">Aviso de Troca de Óleo</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="number" id="km-odometro-atual" placeholder="Odômetro Atual" oninput="checkManutencao()">
                 <input type="number" id="km-ultima-troca" placeholder="KM Última Troca" oninput="checkManutencao()">
-                <input type="number" id="km-intervalo" placeholder="Intervalo" value="1000" oninput="checkManutencao()">
             </div>
+            <input type="number" id="km-intervalo" placeholder="Intervalo p/ Troca (Ex: 1000)" value="1000" oninput="checkManutencao()">
             <div id="aviso-oleo" class="alert-oil">⚠️ HORA DE TROCAR O ÓLEO!</div>
         </div>
 
@@ -594,14 +595,27 @@
                     if (localStorage.getItem('mjsk_liberado_permanente') !== 'true') {
                         document.getElementById('modal-trava').style.display = 'flex';
                     }
-                }, 120000); 
+                }, 120000); //2 minutos
             }
         }
 
         function validarAcesso() {
             const id = document.getElementById('trava-id').value;
             const pass = document.getElementById('trava-senha').value;
-            if (id === "111219" && pass === "111219") {                         // Senha e ID para liberar
+            
+            // LISTA DE ACESSOS PERMITIDOS - ADICIONE OU REMOVA LINHAS ABAIXO
+            const acessosPermitidos = [
+                {id: "Albatroz", senha: "111219"},         // Admin
+                {id: "Albatroz", senha: "Albatroz9na1"},   //
+                {id: "Albatroz", senha: "Albatroz9971"},   //
+                {id: "Albatroz", senha: "Albatroz9y7y"},   //
+                {id: "Albatroz", senha: "Albatroz9mm1"},   //
+                {id: "Albatroz", senha: "Albatroz9i7o"}    //
+            ];
+
+            const acessoValido = acessosPermitidos.find(acc => acc.id === id && acc.senha === pass);
+
+            if (acessoValido) {                         
                 localStorage.setItem('mjsk_liberado_permanente', 'true');
                 if (!localStorage.getItem('mjsk_expiracao')) {
                     const dataExp = new Date();
@@ -955,12 +969,18 @@
         }
 
         function checkManutencao() {
+            const odometro = parseFloat(document.getElementById('km-odometro-atual').value) || 0;
             const ultima = parseFloat(document.getElementById('km-ultima-troca').value) || 0;
             const intervalo = parseFloat(document.getElementById('km-intervalo').value) || 1000;
-            let kmTotal = 0;
-            registros.forEach(r => { if(r.tipo === 'corrida') kmTotal += r.km; });
+            
             const aviso = document.getElementById('aviso-oleo');
-            if(ultima > 0 && kmTotal >= (ultima + intervalo)) { aviso.style.display = 'block'; } else { aviso.style.display = 'none'; }
+            
+            // O aviso aparece se o odômetro atual for maior ou igual à última troca + o intervalo definido
+            if(odometro > 0 && ultima > 0 && odometro >= (ultima + intervalo)) { 
+                aviso.style.display = 'block'; 
+            } else { 
+                aviso.style.display = 'none'; 
+            }
         }
 
         function atualizarGrafico() {
