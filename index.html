@@ -75,6 +75,7 @@
             border-radius: 15px;
             padding: 15px;
             margin-bottom: 15px;
+            box-sizing: border-box;
         }
 
         .badge {
@@ -139,8 +140,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 10px;
             text-align: center;
+            box-sizing: border-box;
         }
         #modal-pix img {
             max-width: 90%;
@@ -196,50 +198,74 @@
             box-shadow: 0 0 10px var(--neon-blue);
         }
 
-        /* --- ESTILOS PLANILHA MENSAL --- */
-        .semana-container {
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 15px;
-            background: rgba(255,255,255,0.02);
-        }
-        .semana-titulo {
-            color: var(--neon-blue);
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            display: block;
-            text-align: left;
-        }
-        .grid-dias {
+        /* --- ESTILOS PLANILHA MENSAL ATUALIZADOS --- */
+        .calendario-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
-        .dia-box { position: relative; }
-        .dia-box label { font-size: 9px; color: #888; display: block; text-align: left; }
-        .dia-box input { padding: 5px; font-size: 11px; margin-bottom: 5px; padding-right: 18px; }
-        
-        .btn-hist-dia {
-            position: absolute;
-            right: 2px;
-            bottom: 8px;
-            background: var(--neon-blue);
-            color: #000;
-            border: none;
-            border-radius: 3px;
+        .calendario-header-dia {
             font-size: 8px;
-            width: 14px;
-            height: 14px;
-            cursor: pointer;
+            color: var(--neon-blue);
             font-weight: bold;
+            text-align: center;
+            padding-bottom: 5px;
+        }
+        .dia-calendario-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 4px;
+            min-height: 55px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .dia-calendario-box.vazio {
+            background: transparent;
+            border: none;
+        }
+        .dia-num-btn {
+            font-size: 10px;
+            font-weight: bold;
+            color: #888;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            text-align: left;
+            width: fit-content;
+            color: var(--neon-blue);
+            text-decoration: underline;
+        }
+        .dia-calendario-box input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(57, 255, 20, 0.3);
+            font-size: 9px;
+            padding: 2px 0;
+            margin: 0;
+            text-align: center;
+            color: var(--neon-green);
+            width: 100%;
+        }
+        .dia-hoje {
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 5px var(--neon-blue);
         }
 
         #modal-metas .card {
-            max-height: 85vh;
+            max-height: 95vh;
             overflow-y: auto;
-            width: 95%;
+            width: 100%;
+            max-width: 450px;
+            padding: 10px;
         }
 
         .btn-lancar {
@@ -292,8 +318,8 @@
             display: flex;
             align-items: flex-end;
             gap: 5px;
-            height: 100px;
-            margin-top: 10px;
+            height: 80px;
+            margin: 15px 0;
             border-bottom: 1px solid #444;
             padding-bottom: 5px;
         }
@@ -310,6 +336,26 @@
             top: -15px;
             width: 100%;
             text-align: center;
+        }
+
+        .nav-mes {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 5px;
+        }
+        .btn-nav {
+            background: var(--neon-blue);
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 10px;
         }
     </style>
 </head>
@@ -519,20 +565,43 @@
     </div>
 
     <div id="modal-metas" class="modal-full">
-        <div class="card" style="max-width: 350px; border: 1px solid var(--neon-green);">
-            <h2 style="color: var(--neon-green); font-size: 16px; margin-top: 0;">PLANILHA MENSAL</h2>
-            <div id="container-semanas"></div>
+        <div class="card">
+            <div class="nav-mes">
+                <button class="btn-nav" onclick="mudarMes(-1)">⬅ ANT</button>
+                <div style="text-align: center;">
+                    <h2 id="titulo-mes-atual" style="color: var(--neon-green); font-size: 14px; margin: 0; text-transform: uppercase;">PLANILHA MENSAL</h2>
+                    <span id="label-ano" style="color: var(--neon-blue); font-weight: bold; font-size: 10px;"></span>
+                </div>
+                <button class="btn-nav" onclick="mudarMes(1)">PROX ➡</button>
+            </div>
+            
+            <div class="calendario-grid" id="container-dias-header">
+                <div class="calendario-header-dia">DOM</div>
+                <div class="calendario-header-dia">SEG</div>
+                <div class="calendario-header-dia">TER</div>
+                <div class="calendario-header-dia">QUA</div>
+                <div class="calendario-header-dia">QUI</div>
+                <div class="calendario-header-dia">SEX</div>
+                <div class="calendario-header-dia">SÁB</div>
+            </div>
+            
+            <div class="calendario-grid" id="container-calendario">
+                </div>
+
             <div class="stat-box" style="border-left-color: var(--neon-green); margin-bottom: 15px;">
                 <span class="stat-label">TOTAL ACUMULADO MÊS</span>
                 <span class="stat-value" id="resumo-mes" style="font-size: 18px; color: var(--neon-green);">R$ 0,00</span>
             </div>
+            
             <div class="chart-container">
                 <div class="chart-bar" id="bar-s1"><span class="chart-label" id="lbl-s1"></span></div>
                 <div class="chart-bar" id="bar-s2"><span class="chart-label" id="lbl-s2"></span></div>
                 <div class="chart-bar" id="bar-s3"><span class="chart-label" id="lbl-s3"></span></div>
                 <div class="chart-bar" id="bar-s4"><span class="chart-label" id="lbl-s4"></span></div>
+                <div class="chart-bar" id="bar-s5"><span class="chart-label" id="lbl-s5"></span></div>
             </div>
-            <button class="btn btn-main" style="background: var(--neon-green);" onclick="salvarMetasMensais()">Aplicar e Salvar</button>
+            
+            <button class="btn btn-main" style="background: var(--neon-green);" onclick="salvarMetasMensais()">Salvar Alterações</button>
             <button class="btn" style="background: #900; color: #fff; font-size: 10px;" onclick="resetarPlanilhaMensal()">Zerar Tudo</button>
             <button class="btn" style="background: #444; color: #fff;" onclick="document.getElementById('modal-metas').style.display='none'">Voltar</button>
         </div>
@@ -557,16 +626,11 @@
 </div>
 
     <script>
-        // Lógica mantida integralmente sem nenhuma otimização ou exclusão.
         let registros = JSON.parse(localStorage.getItem('mjsk_data_v5')) || [];
         
-        let planilhaMensal = JSON.parse(localStorage.getItem('mjsk_planilha_mensal')) || {
-            s1: [0,0,0,0,0,0,0], s2: [0,0,0,0,0,0,0], s3: [0,0,0,0,0,0,0], s4: [0,0,0,0,0,0,0]
-        };
-
-        let historicoMensal = JSON.parse(localStorage.getItem('mjsk_hist_mensal')) || {
-            s1: [[],[],[],[],[],[],[]], s2: [[],[],[],[],[],[],[]], s3: [[],[],[],[],[],[],[]], s4: [[],[],[],[],[],[],[]]
-        };
+        let dataFiltro = new Date();
+        let planilhaMensal = Array(32).fill(0);
+        let historicoMensal = Array(32).fill([]);
 
         let tempoInicio = localStorage.getItem('mjsk_inicio_turno') || null;
         let timerInterval = null;
@@ -604,27 +668,18 @@
             const idInserido = document.getElementById('trava-id').value;
             const passInserido = document.getElementById('trava-senha').value;
             const btnValidar = document.querySelector("#modal-trava .btn-main");
-
             btnValidar.disabled = true;
             btnValidar.innerText = "Verificando...";
-
             const URL_PLANILHA_SENHAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSGlInEoNeYL7p-mweMDGh_v2YKVo2nJneBG0Uz50VbpsqW-5R6lJTe5h_Zx6IMcyv4Tasd9615_X9X/pub?output=csv';
-
             try {
                 const response = await fetch(URL_PLANILHA_SENHAS);
                 const csvText = await response.text();
-                
                 const linhas = csvText.split('\n');
                 const acessosPermitidos = linhas.map(linha => {
                     const colunas = linha.split(',');
-                    return { 
-                        id: colunas[5]?.trim(), 
-                        senha: colunas[6]?.trim() 
-                    };
+                    return { id: colunas[5]?.trim(), senha: colunas[6]?.trim() };
                 });
-
                 const acessoValido = acessosPermitidos.find(acc => acc.id === idInserido && acc.senha === passInserido);
-
                 if (acessoValido) {                         
                     localStorage.setItem('mjsk_liberado_permanente', 'true');
                     if (!localStorage.getItem('mjsk_expiracao')) {
@@ -640,7 +695,6 @@
                     btnValidar.disabled = false;
                     btnValidar.innerText = "Desbloquear";
                 }
-
             } catch (error) {
                 console.error("Erro ao validar acesso:", error);
                 alert("Erro ao conectar com o servidor de senhas.");
@@ -678,7 +732,7 @@
         function solicitarAcesso() {
             const motoboyInfo = JSON.parse(localStorage.getItem('mjsk_motorista'));
             const nomeStr = motoboyInfo ? motoboyInfo.nome : "Motorista";
-            const msg = encodeURIComponent("Olá, eu sou the motorista " + nomeStr + " e preciso liberar/renovar meu acesso no sistema MJSR.");
+            const msg = encodeURIComponent("Olá, eu sou o motorista " + nomeStr + " e preciso liberar/renovar meu acesso no sistema MJSR.");
             window.open("https://wa.me/5562995679219?text=" + msg);
         }
 
@@ -703,7 +757,7 @@
         });
 
         function removerFotoPix() {
-            if(confirm("Deseja excluir o QR Code saved?")) {
+            if(confirm("Deseja excluir o QR Code salvo?")) {
                 localStorage.removeItem('mjsk_foto_pix');
                 document.getElementById('img-qr-exibicao').src = "";
                 document.getElementById('thumb-pix').src = "";
@@ -772,16 +826,11 @@
             document.getElementById('total-gasto').innerText = "R$ " + gastosTotal.toFixed(2);
             document.getElementById('lucro-real').innerText = "R$ " + lucroCalculado.toFixed(2);
             document.getElementById('cofre-manutencao').innerText = "R$ " + (bruto * 0.10).toFixed(2);
-
-            if(kmTotal > 0) {
-                document.getElementById('lucro-por-km').innerText = "R$ " + (lucroCalculado / kmTotal).toFixed(2) + "/KM";
-            }
-
+            if(kmTotal > 0) document.getElementById('lucro-por-km').innerText = "R$ " + (lucroCalculado / kmTotal).toFixed(2) + "/KM";
             const metaInput = document.getElementById('input-meta-diaria');
             const meta = parseFloat(metaInput.value) || 0;
             const barra = document.getElementById('barra-meta');
             const labelProg = document.getElementById('label-progresso');
-
             if(meta > 0) {
                 let perc = (bruto / meta) * 100;
                 if(perc > 100) perc = 100;
@@ -845,34 +894,62 @@
 
         function resetar() { if(confirm("Apagar todos os dados de hoje?")) { registros = []; localStorage.removeItem('mjsk_data_v5'); atualizarDash(); } }
 
+        // --- LÓGICA CALENDÁRIO ATUALIZADA COM MESES ---
+        function mudarMes(delta) {
+            dataFiltro.setMonth(dataFiltro.getMonth() + delta);
+            gerarInterfaceMetas();
+        }
+
         function gerarInterfaceMetas() {
-            const container = document.getElementById('container-semanas');
+            const container = document.getElementById('container-calendario');
+            const tituloMes = document.getElementById('titulo-mes-atual');
+            const labelAno = document.getElementById('label-ano');
             container.innerHTML = "";
-            const diasNome = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
-            for (let s = 1; s <= 4; s++) {
-                let html = `<div class="semana-container"><span class="semana-titulo">SEMANA ${s}</span><div class="grid-dias">`;
-                for (let d = 0; d < 7; d++) {
-                    let valorSalvo = planilhaMensal[`s${s}`][d] || "";
-                    html += `<div class="dia-box"><label>${diasNome[d]}</label><input type="number" id="m-s${s}-d${d}" value="${valorSalvo}" placeholder="0" oninput="salvarMetasMensais()"><button class="btn-hist-dia" onclick="verHistoricoDia(${s}, ${d})">H</button></div>`;
-                }
-                html += `</div></div>`;
-                container.innerHTML += html;
+
+            const mes = dataFiltro.getMonth();
+            const ano = dataFiltro.getFullYear();
+            const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            
+            tituloMes.innerText = nomesMeses[mes];
+            labelAno.innerText = ano;
+
+            // Carrega dados específicos do mês/ano
+            const chaveMensal = `mjsk_planilha_${ano}_${mes}`;
+            const chaveHist = `mjsk_hist_${ano}_${mes}`;
+            planilhaMensal = JSON.parse(localStorage.getItem(chaveMensal)) || Array(32).fill(0);
+            historicoMensal = JSON.parse(localStorage.getItem(chaveHist)) || Array(32).fill([]);
+
+            const primeiroDiaMes = new Date(ano, mes, 1).getDay();
+            const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+            const hoje = new Date();
+
+            for (let i = 0; i < primeiroDiaMes; i++) {
+                container.innerHTML += `<div class="dia-calendario-box vazio"></div>`;
             }
-            carregarCamposSalvos();
+
+            for (let dia = 1; dia <= diasNoMes; dia++) {
+                let valorSalvo = planilhaMensal[dia] || "";
+                let eHoje = (dia === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear()) ? 'dia-hoje' : '';
+                container.innerHTML += `
+                    <div class="dia-calendario-box ${eHoje}">
+                        <button class="dia-num-btn" onclick="verHistoricoDia(${dia})">${dia}</button>
+                        <input type="number" id="input-dia-${dia}" value="${valorSalvo}" placeholder="0" oninput="salvarMetasMensais()">
+                    </div>
+                `;
+            }
+            calcularTotaisMensais();
+            atualizarGrafico();
         }
 
         function abrirModalMetas() {
             document.getElementById('modal-metas').style.display = 'flex';
             gerarInterfaceMetas();
-            calcularTotaisMensais();
-            atualizarGrafico();
         }
 
-        function verHistoricoDia(semana, diaIdx) {
-            const diasNome = ["SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO", "DOMINGO"];
-            const hist = historicoMensal[`s${semana}`][diaIdx];
+        function verHistoricoDia(dia) {
+            const hist = historicoMensal[dia];
             const corpo = document.getElementById('corpo-detalhe-dia');
-            document.getElementById('titulo-hist-dia').innerText = `HISTÓRICO: SEMANA ${semana} - ${diasNome[diaIdx]}`;
+            document.getElementById('titulo-hist-dia').innerText = `HISTÓRICO: DIA ${dia}`;
             corpo.innerHTML = "";
             if(!hist || hist.length === 0) {
                 corpo.innerHTML = "<tr><td colspan='3' style='text-align:center; padding:20px;'>Nenhum detalhe salvo.</td></tr>";
@@ -886,31 +963,36 @@
         }
 
         function salvarMetasMensais() {
-            for (let s = 1; s <= 4; s++) {
-                for (let d = 0; d < 7; d++) {
-                    const val = document.getElementById(`m-s${s}-d${d}`).value;
-                    planilhaMensal[`s${s}`][d] = parseFloat(val) || 0;
+            const mes = dataFiltro.getMonth();
+            const ano = dataFiltro.getFullYear();
+            const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+            for (let dia = 1; dia <= diasNoMes; dia++) {
+                const el = document.getElementById(`input-dia-${dia}`);
+                if(el) {
+                    planilhaMensal[dia] = parseFloat(el.value) || 0;
                 }
             }
-            localStorage.setItem('mjsk_planilha_mensal', JSON.stringify(planilhaMensal));
+            const chaveMensal = `mjsk_planilha_${ano}_${mes}`;
+            localStorage.setItem(chaveMensal, JSON.stringify(planilhaMensal));
             calcularTotaisMensais();
             atualizarGrafico();
         }
 
         function calcularTotaisMensais() {
-            let totalMes = 0;
-            for (let s = 1; s <= 4; s++) { totalMes += planilhaMensal[`s${s}`].reduce((a, b) => a + b, 0); }
+            let totalMes = planilhaMensal.reduce((a, b) => a + (parseFloat(b) || 0), 0);
             document.getElementById('resumo-mes').innerText = "R$ " + totalMes.toFixed(2);
         }
 
         function resetarPlanilhaMensal() {
-            if(confirm("Deseja ZERAR tudo?")) {
-                planilhaMensal = { s1: [0,0,0,0,0,0,0], s2: [0,0,0,0,0,0,0], s3: [0,0,0,0,0,0,0], s4: [0,0,0,0,0,0,0] };
-                historicoMensal = { s1: [[],[],[],[],[],[],[]], s2: [[],[],[],[],[],[],[]], s3: [[],[],[],[],[],[],[]], s4: [[],[],[],[],[],[],[]] };
-                localStorage.setItem('mjsk_planilha_mensal', JSON.stringify(planilhaMensal));
-                localStorage.setItem('mjsk_hist_mensal', JSON.stringify(historicoMensal));
+            if(confirm("Deseja ZERAR este mês?")) {
+                const mes = dataFiltro.getMonth();
+                const ano = dataFiltro.getFullYear();
+                planilhaMensal = Array(32).fill(0);
+                historicoMensal = Array(32).fill([]);
+                localStorage.setItem(`mjsk_planilha_${ano}_${mes}`, JSON.stringify(planilhaMensal));
+                localStorage.setItem(`mjsk_hist_${ano}_${mes}`, JSON.stringify(historicoMensal));
                 gerarInterfaceMetas();
-                calcularTotaisMensais();
             }
         }
 
@@ -919,17 +1001,27 @@
             registros.forEach(r => { if(r.tipo === 'corrida') bruto += r.valor; else gastosTotal += r.valor; });
             let lucroCalculado = bruto - gastosTotal;
             if(lucroCalculado <= 0 && registros.length === 0) { alert("Sem dados!"); return; }
-            const sem = prompt("Qual SEMANA? (1, 2, 3 ou 4)");
-            if(!sem || !['1','2','3','4'].includes(sem)) return;
-            const diaStr = prompt("Qual DIA? (0=SEG a 6=DOM)");
-            if(diaStr === null || diaStr === "") return;
-            const diaIdx = parseInt(diaStr);
-            const chaveSemana = 's' + sem;
-            planilhaMensal[chaveSemana][diaIdx] = lucroCalculado;
-            historicoMensal[chaveSemana][diaIdx] = JSON.parse(JSON.stringify(registros));
-            localStorage.setItem('mjsk_planilha_mensal', JSON.stringify(planilhaMensal));
-            localStorage.setItem('mjsk_hist_mensal', JSON.stringify(historicoMensal));
-            alert("Lançado com sucesso!");
+            
+            const dia = prompt("Lançar em qual DIA do mês atual?");
+            if(!dia || dia < 1 || dia > 31) return;
+            
+            const hoje = new Date();
+            const mes = hoje.getMonth();
+            const ano = hoje.getFullYear();
+            
+            const chaveMensal = `mjsk_planilha_${ano}_${mes}`;
+            const chaveHist = `mjsk_hist_${ano}_${mes}`;
+            
+            let pMensal = JSON.parse(localStorage.getItem(chaveMensal)) || Array(32).fill(0);
+            let hMensal = JSON.parse(localStorage.getItem(chaveHist)) || Array(32).fill([]);
+            
+            pMensal[parseInt(dia)] = lucroCalculado;
+            hMensal[parseInt(dia)] = JSON.parse(JSON.stringify(registros));
+            
+            localStorage.setItem(chaveMensal, JSON.stringify(pMensal));
+            localStorage.setItem(chaveHist, JSON.stringify(hMensal));
+            alert("Lançado no dia " + dia + "!");
+            if(document.getElementById('modal-metas').style.display === 'flex') gerarInterfaceMetas();
         }
 
         function salvarCamposGlobais() {
@@ -991,18 +1083,18 @@
             const odometro = parseFloat(document.getElementById('km-odometro-atual').value) || 0;
             const ultima = parseFloat(document.getElementById('km-ultima-troca').value) || 0;
             const intervalo = parseFloat(document.getElementById('km-intervalo').value) || 1000;
-            
             const aviso = document.getElementById('aviso-oleo');
-            
-            if(odometro > 0 && ultima > 0 && odometro >= (ultima + intervalo)) { 
-                aviso.style.display = 'block'; 
-            } else { 
-                aviso.style.display = 'none'; 
-            }
+            if(odometro > 0 && ultima > 0 && odometro >= (ultima + intervalo)) aviso.style.display = 'block'; 
+            else aviso.style.display = 'none'; 
         }
 
         function atualizarGrafico() {
-            const totais = [planilhaMensal.s1.reduce((a, b) => a + b, 0), planilhaMensal.s2.reduce((a, b) => a + b, 0), planilhaMensal.s3.reduce((a, b) => a + b, 0), planilhaMensal.s4.reduce((a, b) => a + b, 0)];
+            const s1 = planilhaMensal.slice(1, 8).reduce((a,b)=>a+(parseFloat(b)||0),0);
+            const s2 = planilhaMensal.slice(8, 15).reduce((a,b)=>a+(parseFloat(b)||0),0);
+            const s3 = planilhaMensal.slice(15, 22).reduce((a,b)=>a+(parseFloat(b)||0),0);
+            const s4 = planilhaMensal.slice(22, 29).reduce((a,b)=>a+(parseFloat(b)||0),0);
+            const s5 = planilhaMensal.slice(29, 32).reduce((a,b)=>a+(parseFloat(b)||0),0);
+            const totais = [s1, s2, s3, s4, s5];
             const max = Math.max(...totais, 1);
             totais.forEach((t, i) => {
                 const bar = document.getElementById('bar-s' + (i+1));
